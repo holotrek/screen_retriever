@@ -21,9 +21,10 @@ extension NSRect {
     }
 }
 
-public class ScreenRetrieverPlugin: NSObject, FlutterPlugin {
+public class ScreenRetrieverPlugin: NSObject, FlutterPlugin, FlutterAppLifecycleDelegate {
     var registrar: FlutterPluginRegistrar!;
     var channel: FlutterMethodChannel!
+    var externalDisplayCount:Int = 0
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "screen_retriever", binaryMessenger: registrar.messenger)
@@ -31,6 +32,30 @@ public class ScreenRetrieverPlugin: NSObject, FlutterPlugin {
         instance.registrar = registrar
         instance.channel = channel
         registrar.addMethodCallDelegate(instance, channel: channel)
+        registrar.addApplicationDelegate(instance)
+    }
+    
+    public func handleDidBecomeActive(_ notification: Notification) {
+        externalDisplayCount = NSScreen.screens.count
+        setupNotificationCenter()
+    }
+
+    func setupNotificationCenter() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleDisplayConnection),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil)
+    }
+
+    @objc func handleDisplayConnection(notification: Notification) {
+        if externalDisplayCount < NSScreen.screens.count {
+            _emitEvent("monitor-added")
+            externalDisplayCount = NSScreen.screens.count
+        } else if externalDisplayCount > NSScreen.screens.count {
+            _emitEvent("monitor-removed")
+            externalDisplayCount = NSScreen.screens.count
+        }
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
