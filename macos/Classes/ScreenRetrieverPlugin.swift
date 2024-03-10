@@ -35,7 +35,7 @@ public class ScreenRetrieverPlugin: NSObject, FlutterPlugin, FlutterAppLifecycle
         registrar.addApplicationDelegate(instance)
     }
     
-    public func handleDidBecomeActive(_ notification: Notification) {
+    public func handleDidFinishLaunching(_ notification: Notification) {
         externalDisplayCount = NSScreen.screens.count
         setupNotificationCenter()
     }
